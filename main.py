@@ -1,212 +1,91 @@
-import pandas as pd
-import requests
+import pygame
+from math import *
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline, BSpline
-import time
 
-n = []
-print('how many tickers?')
+pygame.init()
 
 
 
-tickerscount = int(input())
-for x in range(tickerscount):
-    print('enter ticker')
-    tick = input()
-    tick = tick.upper()
-    n.append(tick)
+WIDTH = 1280
+HEIGHT = 960
 
-for x in n:
-    def datagetter(link):
-        r = requests.get(link, headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
-        data = pd.read_html(r.text)
-        data = data[0]
-        close = data[['Close*']]
-        return close
-
-
-    link = 'https://finance.yahoo.com/quote/TSLA/history?p=TSLA'
-    link = link.replace("TSLA", x)
-
-
-    tesla = []
-    price = []
-    for x in range(52):
-        price = (datagetter(link))
-        price = price.values.tolist()
-        tesla.append(price[0])
-        time.sleep(0.5)
-        print(x + 1, tesla).
-    looper = 1
-
-
-    while looper < 2:
-        time.sleep(0.5)
-        price = (datagetter(link))
-        price = price.values.tolist()
-        del tesla[-1]
-        tesla.append(price[0])
-
-
-
-        pricelist = []
-
-
-        for count, x in enumerate(tesla):
-            str1 = ''.join(x)
-            try:
-              str1 = float(str1)
-              pricelist.append(str1)
-            except ValueError:
-               pass
-        ema = 0
-        ema2 = 0
-        print(len(pricelist))
-        pricelist = pricelist[0:52]
-        pricelist = pricelist[::-1]
-        l = [pricelist[0]]
-        l2 = [pricelist[0]]
-
-        #print(pricelist)
-
-
-        gd = pricelist[0] / pricelist[-1]
-
-
-        # calculates the 12 period ema
-        for count, x in enumerate(pricelist):
-            str1 = x
-            str2 = l[count]
-            ema1 = (str1 * 0.15384615384) + (str2 * (1 - 0.15384615384))
-            l.append(ema1)
-
-        # calculates the 26 period ema
-        for count, x in enumerate(pricelist):
-            str1 = x
-            str2 = l2[count]
-            ema2 = (str1 * 0.07407407407) + (str2 * (1 - 0.07407407407))
-            l2.append(ema2)
-        #print(l)
-        #print(l2)
-
-        macd = []
-        for x, y in zip(l, l2):
-            macd.append(x - y)
+fov_v = np.pi/4
+fov_h = fov_v* HEIGHT/WIDTH
+nearfrustum = 0.1
+farfrustum = 100
 
 
 
 
-        #print(macd)
-        signalline = [macd[0]]
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
 
-        for count, x in enumerate(macd):
-            str4 = signalline[count]
-            ema2 = (x * 0.2) + (str4 * (1 - 0.2))
-            signalline.append(ema2)
+white = (255,255,255)
+black = (0,0,0)
 
 
-        signalline = signalline[1:]
-        #print(signalline)
-        dif = []
-        for x, y in zip(macd, signalline):
-            verschil = x - y
-            dif.append(verschil)
+scale = 100
+circle_pos = [WIDTH/ 2, HEIGHT/ 2]
+points = []
+for x in (-1, 1):
+    for y in (-1, 1):
+        for z in (-1, 1):
+            points.append(np.matrix([x, y, z]))
 
-        #print(dif)
+print(points)
 
-        buyorsell = []
+trans = np.matrix([[1, 0, 0], [0, 1, 0], [0,0,0]])
 
-        for count, x in enumerate(dif):
-            if x > 0 and dif[count - 1] > 0 and dif[count - 2] < 0:
-                buyorsell.append(0)
-            elif x < 0 and dif[count - 1] > 0:
-                buyorsell.append(1)
-            elif x < 0 and dif[count - 1] < 0:
-                buyorsell.append(1)
-            elif x > 0 and dif[count - 1] > 0:
-                buyorsell.append(2)
+print(trans)
+angle = 0
 
-        #print(buyorsell)
 
-        portfoliohistory = []
 
-        portfolio = 1000
-        stock = 0
-        shortstock = 0
-        buyprice = 0
-        z = 0
-        last = 0
-        for x, y in zip(buyorsell, pricelist):
-            if x == 2:
-                y = y
-                portfolio = portfolio
-                stock = stock
-            elif x == 0:
-                if shortstock > 0:
-                    portfolio = shortstock * (buyprice * (buyprice / y))
-                    shortstock = 0
-                    stock = portfolio / y
-                    portfolio = 0
-                elif stock == 0:
-                    stock = portfolio / y
-                    portfolio = 0
-                else:
-                    stock = stock
-            elif x == 1:
-                if stock == 0 and portfolio == 0:
-                    portfolio = portfolio
-                else:
-                    if portfolio == 0:
-                        portfolio = stock * y
-                        stock = 0
-                        shortstock = portfolio / y
-                        portfolio = 0
-                        buyprice = y
-                    else:
-                        shortstock = portfolio / y
-                        portfolio = 0
-                        buyprice = y
 
-            z += 1
+run = True
 
-            if portfolio > 0:
-                portfoliohistory.append(portfolio)
-                last = portfolio
-            elif portfolio == 0:
-                if shortstock > 0:
-                    portvalue = shortstock * (buyprice * (buyprice / y))
-                    portfoliohistory.append(portvalue)
-                else:
-                    portvalue = stock * y
-                    portfoliohistory.append(portvalue)
-            # print("day", z)
-            # print("actie", x)
-            # print("hoeveel stocks", stock)
-            # print("hoeveelheid shortstocks", shortstock)
-            # print("portfolio doeks", portfolio)
 
-        x2 = np.array([i for i in range(len(portfoliohistory))])
+clock = pygame.time.Clock()
+while run:
+    clock.tick(60)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
 
-        profit = []
+    angle += 0.01
+    if angle > 360:
+        angle = 0
 
-        for x in portfoliohistory:
-            profit.append(x)
+    rotation_z = np.matrix([
+        [cos(angle), -sin(angle), 0],
+        [sin(angle), cos(angle), 0],
+        [0, 0, 1]
 
-        print(portfoliohistory[-1])
-        # X_Y_Spline2 = make_interp_spline(x2, portfoliohistory)
-        #
-        # X_2 = np.linspace(x2.min(), x2.max(), 50)
-        # Y_2 = X_Y_Spline2(X_2)
-        #
-        # X_Y_Spline3 = make_interp_spline(x2, profit)
-        #
-        # Y_3 = X_Y_Spline3(X_2)
-        #
-        # plt.plot(X_2, Y_2)
-        # plt.plot(X_2, Y_3)
-        # plt.legend(n)
-        # plt.show()
+    ])
+
+    rotation_y = np.matrix([
+        [cos(angle), 0, sin(angle)],
+        [0, 1, 0],
+        [-sin(angle), 0, cos(angle)]
+
+    ])
+
+    rotation_x = np.matrix([
+        [1, 0, 0],
+        [0, cos(angle), -sin(angle)],
+        [0, sin(angle), cos(angle)]
+
+    ])
+
+    print(angle)
+    screen.fill(white)
+    for x in points:
+        pointrot = np.dot(x, rotation_z)
+        pointrot = np.dot(pointrot, rotation_x)
+        point = np.dot(pointrot, trans)
+        x = int(point[0, 0] * scale) + circle_pos[0]
+        y = int(point[0, 1] * scale) + circle_pos[1]
+        pygame.draw.circle(screen, black, (x, y), 5)
+    pygame.display.update()
 
 
