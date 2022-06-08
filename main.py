@@ -1,11 +1,12 @@
 import pygame
 from math import *
 import numpy as np
-
+import keyboard
 pygame.init()
 
 
-
+x2 = 0
+y2 = 0
 WIDTH = 1280
 HEIGHT = 960
 
@@ -35,9 +36,10 @@ print(points)
 
 trans = np.matrix([[1, 0, 0], [0, 1, 0], [0,0,0]])
 
+
 print(trans)
 angle = 0
-
+angley = 0
 
 
 
@@ -51,9 +53,23 @@ while run:
         if event.type == pygame.QUIT:
             pygame.quit()
             exit()
+    if keyboard.is_pressed('up arrow'):
+        for x, y  in enumerate(points):
+           points[x] = np.dot(y, 1.1)
+    elif keyboard.is_pressed('down arrow'):
+        for x, y  in enumerate(points):
+           points[x] = np.dot(y, 0.9)
 
-    angle += 0.01
-    if angle > 360:
+    if keyboard.is_pressed('a'):
+        angley += 0.1
+    elif keyboard.is_pressed('d'):
+        angley += -0.1
+    if keyboard.is_pressed('w'):
+        angle += 0.1
+    elif keyboard.is_pressed('s'):
+        angle += -0.1
+    if keyboard.is_pressed('r'):
+        angley = 0
         angle = 0
 
     rotation_z = np.matrix([
@@ -64,9 +80,9 @@ while run:
     ])
 
     rotation_y = np.matrix([
-        [cos(angle), 0, sin(angle)],
+        [cos(angley), 0, sin(angley)],
         [0, 1, 0],
-        [-sin(angle), 0, cos(angle)]
+        [-sin(angley), 0, cos(angley)]
 
     ])
 
@@ -80,12 +96,17 @@ while run:
     print(angle)
     screen.fill(white)
     for x in points:
-        pointrot = np.dot(x, rotation_z)
+        pointrot = np.dot(x, rotation_y)
         pointrot = np.dot(pointrot, rotation_x)
         point = np.dot(pointrot, trans)
         x = int(point[0, 0] * scale) + circle_pos[0]
         y = int(point[0, 1] * scale) + circle_pos[1]
         pygame.draw.circle(screen, black, (x, y), 5)
+        if x2 > 0:
+           pygame.draw.line(screen, black, (x, y), (x2, y2))
+        else:
+            pass
+        x2 = int(point[0, 0] * scale) + circle_pos[0]
+        y2 = int(point[0, 1] * scale) + circle_pos[1]
     pygame.display.update()
-
 
